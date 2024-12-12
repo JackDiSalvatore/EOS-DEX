@@ -1,7 +1,7 @@
 # EOS-DEX
 
-A Decentalized EOS exchange.
+A decentalized EOS exchange.
 
-Smart Contracts: `eosio.contracts.exchange`
-Front End: `eosio.exchange.client`
+Smart Contracts: `eosio.contracts.exchange`  
+Front End: `eosio.exchange.client`  
 
