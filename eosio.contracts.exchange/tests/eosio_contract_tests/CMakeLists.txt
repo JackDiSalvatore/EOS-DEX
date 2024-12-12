@@ -1,0 +1,2 @@
+add_eosio_contract_action_test( token_exchange_action_tests token_exchange_action_tests.cpp)
+add_eosio_contract_test(token_exchange_tests token_exchange_tests.cpp)

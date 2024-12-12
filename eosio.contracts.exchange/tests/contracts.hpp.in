@@ -1,0 +1,21 @@
+#pragma once
+#include <eosio/testing/tester.hpp>
+
+namespace eosio { namespace testing {
+
+struct contracts {
+   static std::vector<uint8_t> system_wasm() { return read_wasm("${EOS_BUILD_DIR}/unittests/contracts/eosio.system/eosio.system.wasm"); }
+   static std::vector<char>    system_abi() { return read_abi("${EOS_BUILD_DIR}/unittests/contracts/eosio.system/eosio.system.abi"); }
+   static std::vector<uint8_t> token_wasm() { return read_wasm("${EOS_BUILD_DIR}/unittests/contracts/eosio.token/eosio.token.wasm"); }
+   static std::vector<char>    token_abi() { return read_abi("${EOS_BUILD_DIR}/unittests/contracts/eosio.token/eosio.token.abi"); }
+   static std::vector<uint8_t> msig_wasm() { return read_wasm("${EOS_BUILD_DIR}/unittests/contracts/eosio.msig/eosio.msig.wasm"); }
+   static std::vector<char>    msig_abi() { return read_abi("${EOS_BUILD_DIR}/unittests/contracts/eosio.msig/eosio.msig.abi"); }
+   static std::vector<uint8_t> exchange_wasm() { return read_wasm("${CMAKE_CURRENT_BINARY_DIR}/../contracts/token.exchange/token.exchange.wasm"); }
+   static std::vector<char>    exchange_abi() { return read_abi("${CMAKE_CURRENT_BINARY_DIR}/../contracts/token.exchange/token.exchange.abi"); }
+
+   struct util {
+      static std::vector<uint8_t> reject_all_wasm() { return read_wasm("${CMAKE_CURRENT_SOURCE_DIR}/test_contracts/reject_all.wasm"); }
+      static std::vector<uint8_t> exchange_wasm() { return read_wasm("${CMAKE_CURRENT_SOURCE_DIR}/test_contracts/exchange.wasm"); }
+   };
+};
+}} //ns eosio::testing

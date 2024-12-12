@@ -1,0 +1,28 @@
+FROM jackdisalvatore/eos1.8:v3 AS build
+COPY ./ /eosio.contracts.exchange
+WORKDIR eosio.contracts.exchange
+RUN mkdir -p build-docker && cd build-docker && cmake .. && make
+
+
+FROM ubuntu:18.04
+# Install dependencies
+RUN apt-get update -y \
+    && apt-get install -y --no-install-recommends libssl1.1 libcurl3-gnutls libusb-1.0-0 curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy eos build directory
+COPY --from=build /eos /eos
+
+# Copy eos install directory
+COPY --from=build /usr/local/bin/cleos /usr/local/bin/cleos
+COPY --from=build /usr/local/bin/eosio-blocklog /usr/local/bin/eosio-blocklog
+COPY --from=build /usr/local/bin/eosio-launcher /usr/local/bin/eosio-launcher
+COPY --from=build /usr/local/bin/keosd /usr/local/bin/keosd
+COPY --from=build /usr/local/bin/nodeos /usr/local/bin/nodeos
+
+# Copy contract build directory
+COPY --from=build /eosio.contracts.exchange /eosio.contracts.exchange
+
+# Run
+WORKDIR eosio.contracts.exchange/scripts
+CMD ["bash", "run_nodeos.sh"]

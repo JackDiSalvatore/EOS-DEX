@@ -1,0 +1,53 @@
+FROM ubuntu:18.04 AS build
+#FROM ubuntu:latest
+RUN apt-get -y update && apt-get install -y build-essential git llvm-8 clang-4.0 clang-8 \
+    lldb-4.0 libclang-4.0-dev curl make automake apt-transport-https ca-certificates gnupg\
+    libtool software-properties-common ninja-build python-pip python-setuptools zlib1g-dev wget
+RUN wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | apt-key add - \
+    && apt-add-repository 'deb https://apt.kitware.com/ubuntu/ bionic main' && apt-get update \
+    && apt-get -y install cmake
+RUN curl -LO https://dl.bintray.com/boostorg/release/1.70.0/source/boost_1_70_0.tar.bz2 && \
+    tar -xjf boost_1_70_0.tar.bz2 && \
+    cd boost_1_70_0 && \
+    ./bootstrap.sh --prefix=/usr/local && \
+    ./b2 link=static threading=multi --with-iostreams --with-date_time --with-filesystem --with-system --with-program_options --with-chrono --with-test -q -j$(nproc) install 
+RUN git clone https://github.com/EOSIO/eos.git
+RUN cd eos && git checkout release/1.8.x \
+  && git submodule update --init --recursive \
+  && scripts/eosio_build.sh -y \
+  && cd build && cmake -DCMAKE_INSTALL_PREFIX=/usr/local . && make install 
+RUN cd /eos && rm -rf CMakeFiles unittests build/unittests/test-contracts libraries && find . -type f -not \( -name '*.wasm' -or -name '*.abi' \) -delete && find . -type d -empty -delete
+RUN curl -L -O https://github.com/EOSIO/eosio.cdt/releases/download/v1.6.3/eosio.cdt_1.6.3-1-ubuntu-18.04_amd64.deb && apt install -y ./eosio.cdt_1.6.3-1-ubuntu-18.04_amd64.deb
+RUN sed -i 's/liboscrypto crypto [^)]*/liboscrypto crypto/; s/libosssl ssl [^)]*/libosssl ssl/' /usr/local/lib/cmake/eosio/EosioTester.cmake
+
+FROM ubuntu:18.04
+# Install dependencies
+RUN apt-get -y update && apt-get install -y llvm-4.0-dev clang-8 \
+    curl make apt-transport-https ca-certificates gnupg \
+    libtool software-properties-common zlib1g-dev wget \
+    libssl-dev libgmp3-dev libcurl3-gnutls libusb-1.0-0
+
+# Install cmake
+RUN wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | apt-key add - \
+    && apt-add-repository 'deb https://apt.kitware.com/ubuntu/ bionic main' && apt-get update \
+    && apt-get -y install cmake \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy eos build directory
+COPY --from=build /eos /eos
+
+# Copy eos install directory
+COPY --from=build /usr/local /usr/local
+
+# Install eosio.cdt
+RUN curl -L -O https://github.com/EOSIO/eosio.cdt/releases/download/v1.6.3/eosio.cdt_1.6.3-1-ubuntu-18.04_amd64.deb && apt install -y ./eosio.cdt_1.6.3-1-ubuntu-18.04_amd64.deb \
+  && rm ./eosio.cdt_1.6.3-1-ubuntu-18.04_amd64.deb
+
+# Update alternatives
+RUN update-alternatives --install /usr/bin/clang clang /usr/bin/clang-8 100 \
+  && update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-8 100
+
+# Set enviroment variables
+ENV CC=/usr/bin/clang
+ENV CXX=/usr/bin/clang++
+ENV EOS_BUILD_DIR=/eos/build
